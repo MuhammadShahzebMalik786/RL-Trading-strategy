@@ -1,6 +1,41 @@
+# Python
 venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Models and logs
 *.zip
-*.png
-*.bat
+*.pkl
+*.h5
 tensorboard_logs/
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.bat
+
+# Trading specific
+*.pine
+*.txt
+*trader*.py
+!trading_env.py
+!train_agent.py
+
+# Images
+*.png
+*.jpg
+*.jpeg
