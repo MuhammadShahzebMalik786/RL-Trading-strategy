@@ -1,0 +1,112 @@
+[
+  {
+    "chunk": 1,
+    "reason": "\ud83d\udc80 Virtual balance wiped",
+    "virtual_pnl": -28.396362304687504,
+    "real_pnl": 0.29999999999972715,
+    "virtual_balance": -18.396362304687504,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.2314957166666667,
+    "trades": 2,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 2,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 0.0,
+    "real_pnl": 0.0,
+    "virtual_balance": 10.0,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.0418769333333335,
+    "trades": 2,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 3,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 8.792724609375,
+    "real_pnl": 0.0,
+    "virtual_balance": 18.792724609375,
+    "real_balance": 2997.22,
+    "duration_minutes": 4.24846235,
+    "trades": 4,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 4,
+    "reason": "\ud83c\udfaf Virtual profit target",
+    "virtual_pnl": 11.785339355468636,
+    "real_pnl": 0.0,
+    "virtual_balance": 21.785339355468636,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.9532465,
+    "trades": 6,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 5,
+    "reason": "\ud83c\udfaf Virtual profit target",
+    "virtual_pnl": 11.785339355468636,
+    "real_pnl": 0.0,
+    "virtual_balance": 21.785339355468636,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.2605925499999997,
+    "trades": 7,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 6,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 0.0,
+    "real_pnl": 0.0,
+    "virtual_balance": 10.0,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.2366361333333336,
+    "trades": 8,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 7,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 2.5235595703125,
+    "real_pnl": 0.0,
+    "virtual_balance": 12.5235595703125,
+    "real_balance": 2997.22,
+    "duration_minutes": 4.1392702833333335,
+    "trades": 11,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 8,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 2.5945434570311363,
+    "real_pnl": 0.0,
+    "virtual_balance": 12.594543457031136,
+    "real_balance": 2997.22,
+    "duration_minutes": 3.0955407,
+    "trades": 13,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 9,
+    "reason": "\u2705 Episode complete",
+    "virtual_pnl": 0.0,
+    "real_pnl": 0.0,
+    "virtual_balance": 10.0,
+    "real_balance": 2997.22,
+    "duration_minutes": 4.9847467666666665,
+    "trades": 14,
+    "winning_trades": 2
+  },
+  {
+    "chunk": 10,
+    "reason": "Manual stop",
+    "virtual_pnl": 2.033203125,
+    "real_pnl": -5.379999999999654,
+    "virtual_balance": 12.033203125,
+    "real_balance": 2991.84,
+    "duration_minutes": 5.032396933333334,
+    "trades": 15,
+    "winning_trades": 7
+  }
+]

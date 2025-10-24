@@ -12,9 +12,9 @@ warnings.filterwarnings('ignore')
 class AdvancedTradingEnv(gym.Env):
     def __init__(self, 
                  initial_balance: float = 10.0,
-                 leverage: int = 2000,
+                 leverage: int = 10,  # Reasonable leverage
                  spread_per_lot: float = 1.6,
-                 min_lot: float = 0.01,
+                 min_lot: float = 0.10,  # ETH minimum
                  max_lot: float = 1.0,
                  margin_per_lot: float = 0.05,  # Much lower margin requirement
                  max_steps: int = 1000,
@@ -56,12 +56,25 @@ class AdvancedTradingEnv(gym.Env):
         self.price_scaler = StandardScaler()
         self.indicator_scaler = StandardScaler()
         
+        # Load data once
+        self.market_data = self._get_market_data()
+        
         self.reset()
     
     def _get_market_data(self) -> pd.DataFrame:
-        """Enhanced market data with more sophisticated generation"""
+        """Enhanced market data with real ETH data support"""
+        # Try to load real ETH data first
         try:
-            # Try real data first
+            data = pd.read_csv('eth_data.csv')
+            # Keep only OHLCV columns, drop datetime
+            data = data[['open', 'high', 'low', 'close', 'volume']].copy()
+            print("✅ Using real ETH data")
+            return data
+        except FileNotFoundError:
+            print("⚠️ Real data not found, using Binance API")
+        
+        try:
+            # Try real data from Binance API
             url = "https://api.binance.com/api/v3/klines"
             params = {
                 'symbol': 'ETHUSDT',
@@ -208,7 +221,7 @@ class AdvancedTradingEnv(gym.Env):
         drawdown_adjustment = max(0.1, 1.0 - current_drawdown * 2)
         
         size = base_size * confidence_multiplier * volatility_adjustment * drawdown_adjustment
-        return np.clip(size, 0.01, self.max_lot)  # Allow smaller positions
+        return np.clip(size, 0.10, self.max_lot)  # ETH minimum
     
     def _calculate_dynamic_stops(self, entry_price: float, position_type: str, volatility: float) -> Tuple[float, float]:
         """Calculate dynamic stop loss and take profit"""
@@ -217,10 +230,9 @@ class AdvancedTradingEnv(gym.Env):
             take_profit = entry_price * (1.04 if position_type == 'long' else 0.96)
             return stop_loss, take_profit
         
-        # ATR-based stops
-        atr_multiplier = max(1.5, min(3.0, volatility * 10))
-        stop_distance = entry_price * 0.01 * atr_multiplier
-        profit_distance = stop_distance * 2.0  # 2:1 risk-reward
+        # Reasonable stops for crypto (0.5% stop, 1% profit)
+        stop_distance = entry_price * 0.005  # 0.5% stop
+        profit_distance = entry_price * 0.01  # 1% profit target
         
         if position_type == 'long':
             stop_loss = entry_price - stop_distance
@@ -254,7 +266,7 @@ class AdvancedTradingEnv(gym.Env):
         self.regime_history = []
         
         # Get market data
-        self.data = self._get_market_data()
+        self.data = self.market_data
         self.indicators = self._calculate_advanced_indicators(self.data)
         
         # Fit scalers
@@ -391,9 +403,9 @@ class AdvancedTradingEnv(gym.Env):
             reward = 0.0  # No penalty for hold
             
         elif action in [1, 2, 3]:  # Buy (small, medium, large)
-            size_multipliers = [0.5, 1.0, 2.0]
+            size_multipliers = [1.0, 1.5, 2.0]  # Changed from [0.5, 1.0, 2.0]
             base_size = self._calculate_position_size(0.7, regime['volatility'])
-            size = base_size * size_multipliers[action - 1]
+            size = max(0.10, base_size * size_multipliers[action - 1])  # ETH minimum
             
             if self._can_open_position(size, current_price):
                 stop_loss, take_profit = self._calculate_dynamic_stops(current_price, 'long', regime['volatility'])
@@ -414,9 +426,9 @@ class AdvancedTradingEnv(gym.Env):
                 reward = -0.5  # Penalty for invalid action
                 
         elif action in [4, 5, 6]:  # Sell (small, medium, large)
-            size_multipliers = [0.5, 1.0, 2.0]
+            size_multipliers = [1.0, 1.5, 2.0]  # Changed from [0.5, 1.0, 2.0]
             base_size = self._calculate_position_size(0.7, regime['volatility'])
-            size = base_size * size_multipliers[action - 4]
+            size = max(0.10, base_size * size_multipliers[action - 4])  # ETH minimum
             
             if self._can_open_position(size, current_price):
                 stop_loss, take_profit = self._calculate_dynamic_stops(current_price, 'short', regime['volatility'])
@@ -454,7 +466,7 @@ class AdvancedTradingEnv(gym.Env):
         
         return (available_margin >= required_margin and
                 len(self.positions) < self.max_concurrent_trades and
-                size >= 0.01 and  # Allow very small positions
+                size >= 0.10 and  # ETH minimum
                 self.step_count - self.last_action_step >= 1)  # Shorter cooldown
     
     def _close_profitable_positions(self, current_price: float) -> float:
@@ -563,6 +575,11 @@ class AdvancedTradingEnv(gym.Env):
         """Enhanced metrics calculation"""
         win_rate = self.winning_trades / max(self.total_trades, 1)
         
+        # Include unrealized PnL in total
+        current_price = self.data.iloc[min(self.step_count + self.lookback, len(self.data) - 1)]['close']
+        unrealized_pnl = sum(self._calculate_unrealized_pnl(pos, current_price) for pos in self.positions)
+        total_pnl_with_unrealized = self.total_pnl + unrealized_pnl
+        
         # Calculate Sharpe ratio
         if len(self.trade_history) > 1:
             returns = [trade['pnl'] / self.initial_balance for trade in self.trade_history]
@@ -572,7 +589,7 @@ class AdvancedTradingEnv(gym.Env):
         
         return {
             'final_balance': self.balance,
-            'total_pnl': self.total_pnl,
+            'total_pnl': total_pnl_with_unrealized,  # Include unrealized
             'win_rate': win_rate,
             'total_trades': self.total_trades,
             'max_drawdown': self.max_drawdown,

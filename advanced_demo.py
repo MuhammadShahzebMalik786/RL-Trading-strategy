@@ -14,10 +14,10 @@ def demo_environment():
     print("🚀 Advanced RL Trading Environment Demo")
     print("=" * 50)
     
-    # Create environment
+    # Create environment with correct settings
     env = AdvancedTradingEnv(
         initial_balance=10.0,
-        leverage=2000,
+        leverage=10,  # Fixed leverage
         max_steps=500,
         lookback=50
     )
