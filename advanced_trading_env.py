@@ -16,7 +16,7 @@ class AdvancedTradingEnv(gym.Env):
                  spread_per_lot: float = 1.6,
                  min_lot: float = 0.01,
                  max_lot: float = 1.0,
-                 margin_per_lot: float = 1.0,
+                 margin_per_lot: float = 0.05,  # Much lower margin requirement
                  max_steps: int = 1000,
                  lookback: int = 50):
         
@@ -68,7 +68,7 @@ class AdvancedTradingEnv(gym.Env):
                 'interval': '1m',
                 'limit': 1000
             }
-            response = requests.get(url, params=params, timeout=5)
+            response = requests.get(url, params=params, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -146,10 +146,17 @@ class AdvancedTradingEnv(gym.Env):
         ])
         
         # Volume indicators
-        indicators.extend([
-            ta.volume.on_balance_volume(df['close'], df['volume']),
-            ta.volume.volume_sma(df['volume'], window=20),
-        ])
+        try:
+            indicators.extend([
+                ta.volume.on_balance_volume(df['close'], df['volume']),
+                ta.volume.volume_weighted_average_price(df['high'], df['low'], df['close'], df['volume']),
+            ])
+        except AttributeError:
+            # Fallback if specific volume indicators don't exist
+            indicators.extend([
+                df['volume'].rolling(window=20).mean(),  # Volume SMA
+                df['volume'].rolling(window=20).std(),   # Volume volatility
+            ])
         
         # Trend indicators
         macd = ta.trend.MACD(df['close'])
@@ -192,7 +199,7 @@ class AdvancedTradingEnv(gym.Env):
             return self.min_lot
         
         # Kelly criterion inspired sizing
-        base_size = self.min_lot
+        base_size = 0.01  # Much smaller base size
         confidence_multiplier = max(0.1, min(confidence, 1.0))
         volatility_adjustment = 1.0 / max(volatility, 0.5)
         
@@ -201,7 +208,7 @@ class AdvancedTradingEnv(gym.Env):
         drawdown_adjustment = max(0.1, 1.0 - current_drawdown * 2)
         
         size = base_size * confidence_multiplier * volatility_adjustment * drawdown_adjustment
-        return np.clip(size, self.min_lot, self.max_lot)
+        return np.clip(size, 0.01, self.max_lot)  # Allow smaller positions
     
     def _calculate_dynamic_stops(self, entry_price: float, position_type: str, volatility: float) -> Tuple[float, float]:
         """Calculate dynamic stop loss and take profit"""
@@ -252,8 +259,11 @@ class AdvancedTradingEnv(gym.Env):
         
         # Fit scalers
         price_data = self.data[['open', 'high', 'low', 'close', 'volume']].values
+        price_data = np.nan_to_num(price_data, nan=0.0)
         self.price_scaler.fit(price_data)
-        self.indicator_scaler.fit(self.indicators)
+        
+        indicators_clean = np.nan_to_num(self.indicators, nan=0.0)
+        self.indicator_scaler.fit(indicators_clean)
         
         return self._get_observation(), {}
     
@@ -272,10 +282,12 @@ class AdvancedTradingEnv(gym.Env):
             indicator_window = self.indicators[start_idx:end_idx]
         
         # Normalize price data
-        price_features = self.price_scaler.transform(price_window.values).flatten()
+        price_data_clean = np.nan_to_num(price_window.values, nan=0.0)
+        price_features = self.price_scaler.transform(price_data_clean).flatten()
         
         # Normalize indicators
-        indicator_features = self.indicator_scaler.transform(indicator_window).flatten()
+        indicator_data_clean = np.nan_to_num(indicator_window, nan=0.0)
+        indicator_features = self.indicator_scaler.transform(indicator_data_clean).flatten()
         
         # Market regime features
         current_prices = price_window['close'].values
@@ -326,6 +338,12 @@ class AdvancedTradingEnv(gym.Env):
             performance_features
         ]).astype(np.float32)
         
+        # Handle NaN and infinite values
+        observation = np.nan_to_num(observation, nan=0.0, posinf=1.0, neginf=-1.0)
+        
+        # Clip extreme values
+        observation = np.clip(observation, -10.0, 10.0)
+        
         # Ensure fixed size
         target_size = self.observation_space.shape[0]
         if len(observation) < target_size:
@@ -370,7 +388,7 @@ class AdvancedTradingEnv(gym.Env):
         regime = self.regime_history[-1] if self.regime_history else {'volatility': 1.0, 'trend': 0.0}
         
         if action == 0:  # Hold
-            reward = -0.01  # Small penalty for inaction
+            reward = 0.0  # No penalty for hold
             
         elif action in [1, 2, 3]:  # Buy (small, medium, large)
             size_multipliers = [0.5, 1.0, 2.0]
@@ -436,8 +454,8 @@ class AdvancedTradingEnv(gym.Env):
         
         return (available_margin >= required_margin and
                 len(self.positions) < self.max_concurrent_trades and
-                size >= self.min_lot and
-                self.step_count - self.last_action_step >= 2)  # Cooldown
+                size >= 0.01 and  # Allow very small positions
+                self.step_count - self.last_action_step >= 1)  # Shorter cooldown
     
     def _close_profitable_positions(self, current_price: float) -> float:
         """Close only profitable positions"""

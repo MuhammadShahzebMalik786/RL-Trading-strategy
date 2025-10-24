@@ -1,3 +1,7 @@
+import warnings
+warnings.filterwarnings('ignore', message='.*Gym has been unmaintained.*')
+warnings.filterwarnings('ignore', category=UserWarning)
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
