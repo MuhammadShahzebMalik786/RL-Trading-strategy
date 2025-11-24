@@ -1,6 +1,6 @@
-# 🧠 Advanced RL Forex Trading Agent
+# 🚀 Quantum Trading System V2.0
 
-A sophisticated Reinforcement Learning framework for forex trading with advanced market analysis, ensemble models, and professional-grade risk management.
+Next-generation AI trading platform with quantum-inspired algorithms, evolutionary neural architecture search, and advanced multi-asset trading capabilities.
 
 ## 🎯 Project Goals
 
@@ -11,22 +11,34 @@ A sophisticated Reinforcement Learning framework for forex trading with advanced
 
 ## 🚀 Quick Start
 
-### 1. Setup Environment
+### 1. Launch Quantum System
 ```bash
-pip install -r requirements.txt
-python setup.py
+python launch_quantum_system.py
+# Interactive menu with all systems
 ```
 
-### 2. Test the System
+### 2. Quick Setup
 ```bash
-python advanced_demo.py
+python launch_quantum_system.py --setup
+# Installs all requirements automatically
 ```
 
-### 3. Train Models
+### 3. Run Quantum Trader
+```bash
+python quantum_trader_v2.py
+# 2048-feature quantum-inspired trading
+```
+
+### 4. Neural Architecture Search
+```bash
+python neural_architect_v2.py
+# Evolutionary neural network design
+```
+
+### 5. Original Advanced System
 ```bash
 python advanced_train.py
-# Choose 'y' for hyperparameter optimization (recommended)
-# Choose 'n' for quick training with defaults
+# Choose 'y' for hyperparameter optimization
 ```
 
 ## 🏗️ System Architecture
